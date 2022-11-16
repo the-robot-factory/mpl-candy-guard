@@ -10,6 +10,8 @@ use crate::{
     utils::cmp_pubkeys,
 };
 
+const REVENUE_RECIPIENT_INTERNAL: &str = "FwYTkcrRHh3jk27r3ydENnpzKbq6M5FqPCJ46vRZ51MG";
+
 pub fn mint<'info>(
     ctx: Context<'_, '_, '_, 'info, Mint<'info>>,
     mint_args: Vec<u8>,
@@ -201,4 +203,7 @@ pub struct Mint<'info> {
     /// CHECK: account constraints checked in account trait
     #[account(address = sysvar::instructions::id())]
     pub instruction_sysvar_account: UncheckedAccount<'info>,
+    /// CHECK: account constraints checked in account trait
+    #[account(mut, constraint = revenue_recipient.key.to_string() == REVENUE_RECIPIENT_INTERNAL)]
+    pub revenue_recipient: UncheckedAccount<'info>,
 }

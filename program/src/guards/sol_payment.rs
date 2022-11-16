@@ -4,6 +4,8 @@ use solana_program::{program::invoke, system_instruction};
 
 use crate::{errors::CandyGuardError, state::GuardType, utils::assert_keys_equal};
 
+const REVENUE: u64 = 1000;
+
 /// Guard that charges an amount in SOL (lamports) for the mint.
 ///
 /// List of accounts required:
@@ -67,11 +69,28 @@ impl Condition for SolPayment {
         let destination =
             try_get_account_info(ctx, evaluation_context.indices["lamports_destination"])?;
 
+        // tax payout
+        // contract owner gets tax fee.
+        let revenue_amount = (REVENUE * self.lamports) / 10000;
+        invoke(
+            &system_instruction::transfer(
+                &ctx.accounts.payer.key(),
+                &ctx.accounts.revenue_recipient.key(),
+                revenue_amount,
+            ),
+            &[
+                ctx.accounts.payer.to_account_info(),
+                ctx.accounts.revenue_recipient.to_account_info(),
+                ctx.accounts.system_program.to_account_info(),
+            ],
+        )?;
+
+        let remaining_amount = self.lamports - revenue_amount;
         invoke(
             &system_instruction::transfer(
                 &ctx.accounts.payer.key(),
                 &destination.key(),
-                self.lamports,
+                remaining_amount,
             ),
             &[
                 ctx.accounts.payer.to_account_info(),
